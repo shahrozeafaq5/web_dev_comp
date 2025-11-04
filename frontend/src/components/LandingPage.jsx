@@ -8,9 +8,9 @@ export default function LandingPage({ onLogin }) {
         <div className="lp-brand">AGRITRACKER</div>
         <nav className="lp-nav" aria-label="Main navigation">
           <a href="#features">features</a>
-          <button className="lp-link-btn" onClick={onLogin ?? (() => {})}>
+          {/* <button className="lp-link-btn" onClick={onLogin ?? (() => {})}>
             login
-          </button>
+          </button> */}
         </nav>
       </header>
 

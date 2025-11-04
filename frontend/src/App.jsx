@@ -1,19 +1,20 @@
-// frontend/src/App.jsx
 import React, { useEffect, useState } from "react";
 import LandingPage from "./components/LandingPage";
 import PriceChart from "./components/PriceChart";
 import { fetchMarket } from "./api/marketApi";
-import "./styles.css"; // optional global styles (keep or remove)
+import Login from "./pages/Login";
+import AdminDashboard from "./components/AdminDashboard";
+import FarmerDashboard from "./components/FarmerDashboard";
+import CommunityForum from "./pages/CommunityForum";
+import "./styles.css";
 
-// Top-level app: toggles between Landing and Market views.
-// Replace or extend navigation with react-router if you prefer.
 export default function App() {
-  const [view, setView] = useState("landing"); // "landing" | "market"
+  const [view, setView] = useState("landing"); // landing | login | market | admin | farmer | forum
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState(null);
 
-  // Fetch market when entering market view
+  // Fetch market data only when view = market
   useEffect(() => {
     if (view !== "market") return;
     let mounted = true;
@@ -37,79 +38,76 @@ export default function App() {
     };
   }, [view]);
 
-  function handleLogin() {
-    // simple flow: treat login as navigation to the market page.
-    // Hook up real auth here later.
-    setView("market");
-  }
-
-  function handleBackToLanding() {
-    setView("landing");
-  }
-
   return (
-    <div className="app-root">
-      {view === "landing" && <LandingPage onLogin={handleLogin} />}
+    <div className="min-h-screen bg-white text-gray-800 font-inter">
+      {/* Landing Page */}
+      {view === "landing" && <LandingPage onLogin={() => setView("login")} />}
 
+      {/* Login Page */}
+      {view === "login" && (
+        <Login
+          onBack={() => setView("landing")}
+          onAdminLogin={() => setView("admin")}
+          onUserLogin={() => setView("farmer")}
+        />
+      )}
+
+      {/* Market Page */}
       {view === "market" && (
-        <div style={{ maxWidth: 1100, margin: "24px auto", padding: "0 16px" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-            <h1 style={{ margin: 0 }}>Market — Smart Agri</h1>
-            <div>
+        <div className="max-w-5xl mx-auto px-4 py-6">
+          <div className="flex justify-between items-center mb-4">
+            <h1 className="text-2xl font-semibold text-gray-900">
+              Market — Smart Agri
+            </h1>
+
+            <div className="space-x-3">
               <button
-                onClick={handleBackToLanding}
-                style={{
-                  marginRight: 10,
-                  padding: "8px 12px",
-                  borderRadius: 8,
-                  border: "1px solid #ddd",
-                  background: "#fff",
-                  cursor: "pointer",
-                }}
+                onClick={() => setView("landing")}
+                className="border border-gray-300 bg-white text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-100 transition"
               >
                 Home
               </button>
               <button
-                onClick={() => { setView("market"); }}
-                style={{
-                  padding: "8px 12px",
-                  borderRadius: 8,
-                  border: "none",
-                  background: "#7aa02f",
-                  color: "#fff",
-                  fontWeight: 700,
-                  cursor: "pointer",
-                }}
+                onClick={() => setView("market")}
+                className="bg-green-700 text-white font-semibold px-3 py-2 rounded-lg hover:bg-green-800 transition"
               >
                 Refresh
               </button>
             </div>
           </div>
 
-          {loading && <p>Loading market data…</p>}
-          {err && <p style={{ color: "crimson" }}>{err}</p>}
-
-          {!loading && !err && (
-            <MarketList items={items} />
-          )}
-
-          {!loading && !err && items.length === 0 && (
-            <p>No items available. You can add items via the backend API.</p>
-          )}
+          {loading && <p className="text-gray-500">Loading market data…</p>}
+          {err && <p className="text-red-600">{err}</p>}
+          {!loading && !err && <MarketList items={items} />}
         </div>
+      )}
+
+      {/* Admin Dashboard */}
+      {view === "admin" && (
+        <AdminDashboard onBack={() => setView("landing")} />
+      )}
+
+      {/* Farmer Dashboard */}
+      {view === "farmer" && (
+        <FarmerDashboard
+          onForumOpen={() => setView("forum")}
+          onMarketOpen={() => setView("market")}
+          onBackHome={() => setView("landing")}
+        />
+      )}
+
+      {/* Community Forum */}
+      {view === "forum" && (
+        <CommunityForum onBack={() => setView("farmer")} />
       )}
     </div>
   );
 }
 
-/* ---------------------------
-   Small presentational components
-   (kept inside App.jsx intentionally for minimal file count)
-   --------------------------- */
-
+/* Market Components */
 function MarketList({ items = [] }) {
   return (
-    <div style={{ display: "grid", gap: 18 }}>
+    <div className="grid gap-5">
       {items.map((it) => (
         <MarketCard key={it.id} item={it} />
       ))}
@@ -118,48 +116,31 @@ function MarketList({ items = [] }) {
 }
 
 function MarketCard({ item }) {
-  // Ensure trend is an array of numbers; fallback to repeated value
-  const trend = Array.isArray(item.trend) ? item.trend : new Array(7).fill(item.price ?? 0);
+  const trend = Array.isArray(item.trend)
+    ? item.trend
+    : new Array(7).fill(item.price ?? 0);
 
   return (
-    <section
-      style={{
-        border: "1px solid #eee",
-        borderRadius: 10,
-        padding: 18,
-        background: "#fff",
-        boxShadow: "0 1px 4px rgba(0,0,0,0.03)",
-        display: "flex",
-        gap: 18,
-        alignItems: "center",
-      }}
-      aria-label={`${item.name} market card`}
-    >
-      <div style={{ flex: "0 0 340px" }}>
-        <h2 style={{ margin: "0 0 6px" }}>{item.name} — ₹{item.price}</h2>
-        <div style={{ color: "#666" }}>7-day trend</div>
+    <section className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm flex flex-col md:flex-row items-center gap-5">
+      <div className="md:w-1/3">
+        <h2 className="text-lg font-semibold text-gray-800">
+          {item.name} — ₹{item.price}
+        </h2>
+        <p className="text-sm text-gray-500">7-day trend</p>
       </div>
 
-      <div style={{ flex: 1 }}>
+      <div className="flex-1 w-full">
         <PriceChart series={trend} />
       </div>
 
-      <div style={{ flex: "0 0 120px", textAlign: "right" }}>
-        <small style={{ color: "#666" }}>id: {item.id}</small>
-        <div style={{ marginTop: 8 }}>
-          <button
-            onClick={() => alert(`Open details for ${item.name} (implement later)`)}
-            style={{
-              padding: "8px 10px",
-              borderRadius: 8,
-              border: "1px solid #ddd",
-              background: "#fff",
-              cursor: "pointer",
-            }}
-          >
-            Details
-          </button>
-        </div>
+      <div className="text-right">
+        <small className="text-gray-500 block">id: {item.id}</small>
+        <button
+          onClick={() => alert(`Open details for ${item.name}`)}
+          className="mt-2 border border-gray-300 bg-white px-3 py-2 rounded-lg hover:bg-gray-100 transition"
+        >
+          Details
+        </button>
       </div>
     </section>
   );
